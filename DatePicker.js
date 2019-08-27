@@ -2,16 +2,16 @@
 (function () {
   // DatePicker类
   var DatePicker = function (el, options) {
+    var date = new Date()
     // 全局变量
     this.yearScroller = null // 年scroller实例
     this.monthScroller = null // 月scroller实例
     this.dateScroller = null // 日scroller实例
-    this.lastScrollYmd = '' // 上一次滚动到年月日
+    this.lastScrollYmd = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() // 上一次滚动到年月日
     this.yearList = [] // 年份数组
     this.monthList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] // 月份数组
     this.dateList = [] // 日期数组
     // 配置对象默认数据
-    var date = new Date()
     this.dateOptions = {
       beginYear: date.getFullYear(), // 开始的年份
       endYear: date.getFullYear() + 10, // 结束的年份
@@ -26,6 +26,7 @@
     this.beginYear = options.beginYear || this.dateOptions.beginYear
     this.endYear = options.endYear || this.dateOptions.endYear
     this.ymd = options.ymd || this.dateOptions.ymd
+    this.lastScrollYmd = options.ymd || this.lastScrollYmd
     this.init()
   }
   DatePicker.prototype = {
@@ -100,6 +101,7 @@
       if (!this.yearScroller) {
         if (this.ymd) {
           ymd = this.ymd
+          this.lastScrollYmd = this.ymd
         }
       } else {
         if (this.el.value) {
@@ -114,7 +116,7 @@
         date = ymd.split('-')[2]
       }
       var self = this
-      // 第一次显示的时候，实例化年scroller
+      // 实例化年scroller
       self.yearScroller = new IScroll('.DatePicker__body__list__year')
       if (year) {
         self.yearList.forEach(function (item, index) {
@@ -126,11 +128,11 @@
       self.yearScroller.on('scrollEnd', function () {
         var y = Math.abs(self.yearScroller.y)
         self.yearScroller.scrollTo(0, -Math.round(y / 34) * 34)
-        this.lastScrollYmd = self.getYmd()
+        self.lastScrollYmd = self.getYmd()
         self.createDate(self.getYear(), self.getMonth())
         self.dateScroller.refresh()
       })
-      // 第一次显示的时候，实例化月scroller
+      // 实例化月scroller
       self.monthScroller = new IScroll('.DatePicker__body__list__month')
       if (month) {
         self.monthList.forEach(function (item, index) {
@@ -142,11 +144,11 @@
       self.monthScroller.on('scrollEnd', function () {
         var y = Math.abs(self.monthScroller.y)
         self.monthScroller.scrollTo(0, -Math.round(y / 34) * 34)
-        this.lastScrollYmd = self.getYmd()
+        self.lastScrollYmd = self.getYmd()
         self.createDate(self.getYear(), self.getMonth())
         self.dateScroller.refresh()
       })
-      // 第一次显示的时候，实例化日scroller
+      // 实例化日scroller
       self.dateScroller = new IScroll('.DatePicker__body__list__date')
       if (date) {
         self.dateList.forEach(function (item, index) {
@@ -158,7 +160,7 @@
       self.dateScroller.on('scrollEnd', function () {
         var y = Math.abs(self.dateScroller.y)
         self.dateScroller.scrollTo(0, -Math.round(y / 34) * 34)
-        this.lastScrollYmd = self.getYmd()
+        self.lastScrollYmd = self.getYmd()
       })
     },
     // 创造年模块，插入到对应的位置
@@ -253,6 +255,7 @@
     },
     // 隐藏日历模块
     hide: function () {
+      var self = this
       document.querySelector('.DatePicker__mask').style.opacity = '0'
       document.querySelector('.DatePicker__container').style.transform = 'translateY(100%)'
       setTimeout(function () {
