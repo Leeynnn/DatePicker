@@ -25,7 +25,11 @@
 #### options对象的有效值：
 
 #### {
-####  beginYear: 1970, // 开始年份
-####  endYear: 2100, // 结束年份
-####  ymd: '2020-01-01' // 默认选中的年份，注意一定要用 'year-month-date' 这种格式
+####  beginYear: date.getFullYear(), // 开始的年份
+####  beginYmd: '', // 开始的年月日
+####  endYear: date.getFullYear() + 10, // 结束的年份
+####  endYmd: '', // 结束的年月日
+####  ymd: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), // 默认选中的日期
+####  beforeCreate: null, // create方法执行前的自定义函数
+####  beforeShow: null // show方法执行前的自定义函数
 #### }

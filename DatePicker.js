@@ -8,14 +8,15 @@
     this.monthScroller = null // 月scroller实例
     this.dateScroller = null // 日scroller实例
     this.lastScrollYmd = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() // 上一次滚动到年月日
-    this.yearList = [] // 年份数组
-    this.monthList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] // 月份数组
-    this.dateList = [] // 日期数组
     // 配置对象默认数据
     this.dateOptions = {
       beginYear: date.getFullYear(), // 开始的年份
+      beginYmd: '', // 开始的年月日
       endYear: date.getFullYear() + 10, // 结束的年份
-      ymd: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() // 默认选中的日期
+      endYmd: '', // 结束的年月日
+      ymd: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), // 默认选中的日期
+      beforeCreate: null, // create方法执行前的自定义函数
+      beforeShow: null // show方法执行前的自定义函数
     }
     // el是绑定的input框
     // options是自定义的配置对象
@@ -24,9 +25,13 @@
     }
     this.el = typeof el == 'string' ? document.querySelector(el) : el
     this.beginYear = options.beginYear || this.dateOptions.beginYear
+    this.beginYmd = options.beginYmd || this.dateOptions.beginYmd
     this.endYear = options.endYear || this.dateOptions.endYear
+    this.endYmd = options.endYmd || this.dateOptions.endYmd
     this.ymd = options.ymd || this.dateOptions.ymd
     this.lastScrollYmd = options.ymd || this.lastScrollYmd
+    this.beforeCreate = options.beforeCreate || this.dateOptions.beforeCreate
+    this.beforeShow = options.beforeShow || this.dateOptions.beforeShow
     this.init()
   }
   DatePicker.prototype = {
@@ -34,7 +39,17 @@
     init: function () {
       var self = this
       this.el.onclick = function () {
+        if (self.beforeCreate) {
+          if (typeof self.beforeCreate === 'function') {
+            self.beforeCreate()
+          }
+        }
         self.create()
+        if (self.beforeShow) {
+          if (typeof self.beforeShow === 'function') {
+            self.beforeShow()
+          }
+        }
         self.show()
       }
     },
@@ -119,27 +134,49 @@
       // 实例化年scroller
       self.yearScroller = new IScroll('.DatePicker__body__list__year')
       if (year) {
-        self.yearList.forEach(function (item, index) {
-          if (parseInt(item) == parseInt(year)) {
-            self.yearScroller.scrollTo(0, -index * 34)
+        var beginYear = this.beginYear
+        var endYear = this.endYear
+        if (this.beginYmd) {
+          beginYear = parseInt(this.beginYmd.split('-')[0])
+        }
+        if (this.endYmd) {
+          endYear = parseInt(this.endYmd.split('-')[0])
+        }
+        for (let i = 0; i < (endYear - beginYear); i++) {
+          if (parseInt(i) == parseInt(year)) {
+            self.yearScroller.scrollTo(0, -i * 34)
           }
-        })
+        }
       }
       self.yearScroller.on('scrollEnd', function () {
         var y = Math.abs(self.yearScroller.y)
         self.yearScroller.scrollTo(0, -Math.round(y / 34) * 34)
         self.lastScrollYmd = self.getYmd()
+        self.createMonth()
+        self.monthScroller.refresh()
         self.createDate(self.getYear(), self.getMonth())
         self.dateScroller.refresh()
       })
       // 实例化月scroller
       self.monthScroller = new IScroll('.DatePicker__body__list__month')
       if (month) {
-        self.monthList.forEach(function (item, index) {
-          if (parseInt(item) == parseInt(month)) {
-            self.monthScroller.scrollTo(0, -index * 34)
+        var beginMonth = 0
+        var endMonth = 12
+        if (this.beginYmd) {
+          if (this.getYear() == parseInt(this.beginYmd.split('-')[0])) {
+            beginMonth = parseInt(this.beginYmd.split('-')[1]) - 1
           }
-        })
+        }
+        if (this.endYmd) {
+          if (this.getYear() == parseInt(this.endYmd.split('-')[0])) {
+            endMonth = parseInt(this.endYmd.split('-')[1])
+          }
+        }
+        for (let i = 0; i < (endMonth - beginMonth); i++) {
+          if (parseInt(i) == parseInt(month - 1)) {
+            self.monthScroller.scrollTo(0, -i * 34)
+          }
+        }
       }
       self.monthScroller.on('scrollEnd', function () {
         var y = Math.abs(self.monthScroller.y)
@@ -151,11 +188,23 @@
       // 实例化日scroller
       self.dateScroller = new IScroll('.DatePicker__body__list__date')
       if (date) {
-        self.dateList.forEach(function (item, index) {
-          if (parseInt(item) == parseInt(date)) {
-            self.dateScroller.scrollTo(0, -index * 34)
+        var beginDate = 1
+        var endDate = this.getTotalDays(year, month)
+        if (this.beginYmd) {
+          if (this.getYear() == parseInt(this.beginYmd.split('-')[0]) && this.getMonth() == parseInt(this.beginYmd.split('-')[1])) {
+            beginDate = parseInt(this.beginYmd.split('-')[2])
           }
-        })
+        }
+        if (this.endYmd) {
+          if (this.getYear() == parseInt(this.endYmd.split('-')[0]) && this.getMonth() == parseInt(this.endYmd.split('-')[1])) {
+            endDate = parseInt(this.endYmd.split('-')[2])
+          }
+        }
+        for (let i = 0; i < (endDate - beginDate); i++) {
+          if (parseInt(i) == parseInt(date)) {
+            self.dateScroller.scrollTo(0, -i * 34)
+          }
+        }
       }
       self.dateScroller.on('scrollEnd', function () {
         var y = Math.abs(self.dateScroller.y)
@@ -165,10 +214,16 @@
     },
     // 创造年模块，插入到对应的位置
     createYear: function () {
-      this.yearList = []
       var str = ''
-      for (let i = this.beginYear; i <= this.endYear; i++) {
-        this.yearList.push(i)
+      var beginYear = this.beginYear
+      var endYear = this.endYear
+      if (this.beginYmd) {
+        beginYear = parseInt(this.beginYmd.split('-')[0])
+      }
+      if (this.endYmd) {
+        endYear = parseInt(this.endYmd.split('-')[0])
+      }
+      for (let i = beginYear; i <= endYear; i++) {
         str += '<div class="DatePicker__body__list__scroller__item">' + i + '</div>'
       }
       document.querySelector('.DatePicker__body__list__year').childNodes[0].innerHTML = str
@@ -176,19 +231,41 @@
     // 创造月模块，插入到对应的位置
     createMonth: function () {
       var str = ''
-      for (let i = 0; i < this.monthList.length; i++) {
-        str += '<div class="DatePicker__body__list__scroller__item">' + this.monthList[i] + '</div>'
+      var beginMonth = 0
+      var endMonth = 12
+      if (this.beginYmd) {
+        if (this.getYear() == parseInt(this.beginYmd.split('-')[0])) {
+          beginMonth = parseInt(this.beginYmd.split('-')[1]) - 1
+        }
+      }
+      if (this.endYmd) {
+        if (this.getYear() == parseInt(this.endYmd.split('-')[0])) {
+          endMonth = parseInt(this.endYmd.split('-')[1])
+        }
+      }
+      for (let i = beginMonth; i < endMonth; i++) {
+        str += '<div class="DatePicker__body__list__scroller__item">' + this.addZero(i + 1) + '</div>'
       }
       document.querySelector('.DatePicker__body__list__month').childNodes[0].innerHTML = str
     },
     // 创造日模块，插入到对应的位置
     createDate: function (year, month) {
-      this.dateList = []
       year = parseInt(year)
       month = parseInt(month)
       var str = ''
-      for (let i = 1; i <= this.getTotalDays(year, month); i++) {
-        this.dateList.push(this.addZero(i))
+      var beginDate = 1
+      var endDate = this.getTotalDays(year, month)
+      if (this.beginYmd) {
+        if (this.getYear() == parseInt(this.beginYmd.split('-')[0]) && this.getMonth() == parseInt(this.beginYmd.split('-')[1])) {
+          beginDate = parseInt(this.beginYmd.split('-')[2])
+        }
+      }
+      if (this.endYmd) {
+        if (this.getYear() == parseInt(this.endYmd.split('-')[0]) && this.getMonth() == parseInt(this.endYmd.split('-')[1])) {
+          endDate = parseInt(this.endYmd.split('-')[2])
+        }
+      }
+      for (let i = beginDate; i <= endDate; i++) {
         str += '<div class="DatePicker__body__list__scroller__item">' + this.addZero(i) + '</div>'
       }
       document.querySelector('.DatePicker__body__list__date').childNodes[0].innerHTML = str
@@ -227,21 +304,33 @@
     },
     // 获取选中的年
     getYear: function () {
-      var yearIndex = parseInt(Math.abs(this.yearScroller.y) / 34)
-      var year = document.querySelector('.DatePicker__body__list__year').childNodes[0].childNodes[yearIndex].innerText
-      return year
+      if (this.yearScroller) {
+        var yearIndex = parseInt(Math.abs(this.yearScroller.y) / 34)
+        var year = document.querySelector('.DatePicker__body__list__year').childNodes[0].childNodes[yearIndex].innerText
+        return year
+      } else {
+        return this.lastScrollYmd.split('-')[0]
+      }
     },
     // 获取选中的月
     getMonth: function () {
-      var monthIndex = parseInt(Math.abs(this.monthScroller.y) / 34)
-      var month = document.querySelector('.DatePicker__body__list__month').childNodes[0].childNodes[monthIndex].innerText
-      return month
+      if (this.monthScroller) {
+        var monthIndex = parseInt(Math.abs(this.monthScroller.y) / 34)
+        var month = document.querySelector('.DatePicker__body__list__month').childNodes[0].childNodes[monthIndex].innerText
+        return month
+      } else {
+        return this.lastScrollYmd.split('-')[1]
+      }
     },
     // 获取选中的日
     getDate: function () {
-      var dateIndex = parseInt(Math.abs(this.dateScroller.y) / 34)
-      var date = document.querySelector('.DatePicker__body__list__date').childNodes[0].childNodes[dateIndex].innerText
-      return date
+      if (this.dateScroller) {
+        var dateIndex = parseInt(Math.abs(this.dateScroller.y) / 34)
+        var date = document.querySelector('.DatePicker__body__list__date').childNodes[0].childNodes[dateIndex].innerText
+        return date
+      } else {
+        return this.lastScrollYmd.split('-')[2]
+      }
     },
     // 显示日历模块
     show: function () {
