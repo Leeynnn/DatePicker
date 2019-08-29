@@ -95,7 +95,17 @@
       document.body.appendChild(DatePicker)
       this.createYear()
       this.createMonth()
-      this.createDate(this.beginYear, 1)
+      var beginYear = this.beginYear
+      if (this.beginYmd) {
+        beginYear = parseInt(this.beginYmd.split('-')[0])
+      }
+      var beginMonth = 1
+      if (this.beginYmd) {
+        if (this.getYear() == parseInt(this.beginYmd.split('-')[0])) {
+          beginMonth = parseInt(this.beginYmd.split('-')[1])
+        }
+      }
+      this.createDate(beginYear, beginMonth)
       // 定义模块里的一些事件
       document.querySelector('.DatePicker__mask').onclick = function () {
         self.hide()
@@ -142,9 +152,9 @@
         if (this.endYmd) {
           endYear = parseInt(this.endYmd.split('-')[0])
         }
-        for (let i = 0; i < (endYear - beginYear); i++) {
+        for (let i = beginYear; i <= endYear; i++) {
           if (parseInt(i) == parseInt(year)) {
-            self.yearScroller.scrollTo(0, -i * 34)
+            self.yearScroller.scrollTo(0, -(i - beginYear) * 34)
           }
         }
       }
@@ -160,11 +170,11 @@
       // 实例化月scroller
       self.monthScroller = new IScroll('.DatePicker__body__list__month')
       if (month) {
-        var beginMonth = 0
+        var beginMonth = 1
         var endMonth = 12
         if (this.beginYmd) {
           if (this.getYear() == parseInt(this.beginYmd.split('-')[0])) {
-            beginMonth = parseInt(this.beginYmd.split('-')[1]) - 1
+            beginMonth = parseInt(this.beginYmd.split('-')[1])
           }
         }
         if (this.endYmd) {
@@ -172,9 +182,9 @@
             endMonth = parseInt(this.endYmd.split('-')[1])
           }
         }
-        for (let i = 0; i < (endMonth - beginMonth); i++) {
-          if (parseInt(i) == parseInt(month - 1)) {
-            self.monthScroller.scrollTo(0, -i * 34)
+        for (let i = beginMonth; i <= endMonth; i++) {
+          if (parseInt(i) == parseInt(month)) {
+            self.monthScroller.scrollTo(0, -(i - beginMonth) * 34)
           }
         }
       }
@@ -200,9 +210,9 @@
             endDate = parseInt(this.endYmd.split('-')[2])
           }
         }
-        for (let i = 0; i < (endDate - beginDate); i++) {
+        for (let i = beginDate; i <= endDate; i++) {
           if (parseInt(i) == parseInt(date)) {
-            self.dateScroller.scrollTo(0, -i * 34)
+            self.dateScroller.scrollTo(0, -(i - beginDate) * 34)
           }
         }
       }
@@ -231,11 +241,11 @@
     // 创造月模块，插入到对应的位置
     createMonth: function () {
       var str = ''
-      var beginMonth = 0
+      var beginMonth = 1
       var endMonth = 12
       if (this.beginYmd) {
         if (this.getYear() == parseInt(this.beginYmd.split('-')[0])) {
-          beginMonth = parseInt(this.beginYmd.split('-')[1]) - 1
+          beginMonth = parseInt(this.beginYmd.split('-')[1])
         }
       }
       if (this.endYmd) {
@@ -243,8 +253,8 @@
           endMonth = parseInt(this.endYmd.split('-')[1])
         }
       }
-      for (let i = beginMonth; i < endMonth; i++) {
-        str += '<div class="DatePicker__body__list__scroller__item">' + this.addZero(i + 1) + '</div>'
+      for (let i = beginMonth; i <= endMonth; i++) {
+        str += '<div class="DatePicker__body__list__scroller__item">' + this.addZero(i) + '</div>'
       }
       document.querySelector('.DatePicker__body__list__month').childNodes[0].innerHTML = str
     },
@@ -309,6 +319,9 @@
         var year = document.querySelector('.DatePicker__body__list__year').childNodes[0].childNodes[yearIndex].innerText
         return year
       } else {
+        if (this.beginYmd) {
+          return this.beginYmd.split('-')[0]
+        }
         return this.lastScrollYmd.split('-')[0]
       }
     },
@@ -319,6 +332,9 @@
         var month = document.querySelector('.DatePicker__body__list__month').childNodes[0].childNodes[monthIndex].innerText
         return month
       } else {
+        if (this.beginYmd) {
+          return this.beginYmd.split('-')[1]
+        }
         return this.lastScrollYmd.split('-')[1]
       }
     },
@@ -329,6 +345,9 @@
         var date = document.querySelector('.DatePicker__body__list__date').childNodes[0].childNodes[dateIndex].innerText
         return date
       } else {
+        if (this.beginYmd) {
+          return this.beginYmd.split('-')[2]
+        }
         return this.lastScrollYmd.split('-')[2]
       }
     },
