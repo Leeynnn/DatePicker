@@ -8,8 +8,10 @@
     this.monthScroller = null // 月scroller实例
     this.dateScroller = null // 日scroller实例
     this.lastScrollYmd = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() // 上一次滚动到年月日
+    this.time = 0 // 上次点击的时间
     // 配置对象默认数据
     this.dateOptions = {
+      substitute: '', // input的替身点击元素
       beginYear: date.getFullYear(), // 开始的年份
       beginYmd: '', // 开始的年月日
       endYear: date.getFullYear() + 10, // 结束的年份
@@ -24,6 +26,7 @@
       options = {}
     }
     this.el = typeof el == 'string' ? document.querySelector(el) : el
+    this.substitute = options.substitute || this.dateOptions.substitute
     this.beginYear = options.beginYear || this.dateOptions.beginYear
     this.beginYmd = options.beginYmd || this.dateOptions.beginYmd
     this.endYear = options.endYear || this.dateOptions.endYear
@@ -38,20 +41,28 @@
     // 初始化方法，会在类实例化的时候调用
     init: function () {
       var self = this
-      this.el.onclick = function () {
-        if (self.beforeCreate) {
-          if (typeof self.beforeCreate === 'function') {
-            self.beforeCreate()
-          }
-        }
-        self.create()
-        if (self.beforeShow) {
-          if (typeof self.beforeShow === 'function') {
-            self.beforeShow()
-          }
-        }
-        self.show()
+      var dom = this.el
+      if (this.substitute) {
+        dom = typeof this.substitute == 'string' ? document.querySelector(this.substitute) : this.substitute
       }
+      dom.addEventListener('click', function () {
+          // 100ms内多次点击
+          if (self.stopDoubleClick()) {
+              return
+          }
+          if (self.beforeCreate) {
+              if (typeof self.beforeCreate === 'function') {
+                  self.beforeCreate()
+              }
+          }
+          self.create()
+          if (self.beforeShow) {
+              if (typeof self.beforeShow === 'function') {
+                  self.beforeShow()
+              }
+          }
+          self.show()
+      })
     },
     // 创造方法，在body底部插入日历模块
     create: function () {
@@ -107,15 +118,19 @@
       }
       this.createDate(beginYear, beginMonth)
       // 定义模块里的一些事件
-      document.querySelector('.DatePicker__mask').onclick = function () {
-        self.hide()
-      }
-      document.querySelector('.DatePicker__head__cancel').onclick = function () {
-        self.hide()
-      }
-      document.querySelector('.DatePicker__head__confirm').onclick = function () {
-        self.confirm()
-      }
+      document.querySelector('.DatePicker__mask').addEventListener('click', function () {
+          // 100ms内多次点击
+          if (self.stopDoubleClick()) {
+              return
+          }
+          self.hide()
+      })
+      document.querySelector('.DatePicker__head__cancel').addEventListener('click', function () {
+          self.hide()
+      })
+      document.querySelector('.DatePicker__head__confirm').addEventListener('click', function () {
+          self.confirm()
+      })
     },
     // 创造年月日scroller
     createScroller: function () {
@@ -370,6 +385,17 @@
         // document.querySelector('#DatePicker').style.display = 'none'
         document.body.removeChild(document.getElementById('DatePicker'))
       }, 300)
+    },
+    // 阻止多次点击
+    stopDoubleClick: function () {
+      if (this.time) {
+        var time = new Date().getTime()
+        var oldTime = this.time
+        if (time - oldTime < 100) {
+          return true
+        }
+      }
+      this.time = new Date().getTime()
     }
   }
   // 导出DatePicker类

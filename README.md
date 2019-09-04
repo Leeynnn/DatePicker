@@ -25,6 +25,7 @@
 #### options对象的有效值：
 
 #### {
+####  substitute: '', // input的替身点击元素
 ####  beginYear: date.getFullYear(), // 开始的年份
 ####  beginYmd: '', // 开始的年月日
 ####  endYear: date.getFullYear() + 10, // 结束的年份
