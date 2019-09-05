@@ -46,22 +46,22 @@
         dom = typeof this.substitute == 'string' ? document.querySelector(this.substitute) : this.substitute
       }
       dom.addEventListener('click', function () {
-          // 100ms内多次点击
-          if (self.stopDoubleClick()) {
-              return
+        // 100ms内多次点击
+        if (self.stopDoubleClick()) {
+          return
+        }
+        if (self.beforeCreate) {
+          if (typeof self.beforeCreate === 'function') {
+            self.beforeCreate()
           }
-          if (self.beforeCreate) {
-              if (typeof self.beforeCreate === 'function') {
-                  self.beforeCreate()
-              }
+        }
+        self.create()
+        if (self.beforeShow) {
+          if (typeof self.beforeShow === 'function') {
+            self.beforeShow()
           }
-          self.create()
-          if (self.beforeShow) {
-              if (typeof self.beforeShow === 'function') {
-                  self.beforeShow()
-              }
-          }
-          self.show()
+        }
+        self.show()
       })
     },
     // 创造方法，在body底部插入日历模块
@@ -69,6 +69,7 @@
       var self = this
       var DatePicker = document.createElement('div')
       DatePicker.id = 'DatePicker'
+      DatePicker.class = 'DatePicker'
       // 模块的HTML代码
       var str =
         '<div class="DatePicker__mask"></div>' +
@@ -119,17 +120,17 @@
       this.createDate(beginYear, beginMonth)
       // 定义模块里的一些事件
       document.querySelector('.DatePicker__mask').addEventListener('click', function () {
-          // 100ms内多次点击
-          if (self.stopDoubleClick()) {
-              return
-          }
-          self.hide()
+        // 100ms内多次点击
+        if (self.stopDoubleClick()) {
+          return
+        }
+        self.hide()
       })
       document.querySelector('.DatePicker__head__cancel').addEventListener('click', function () {
-          self.hide()
+        self.hide()
       })
       document.querySelector('.DatePicker__head__confirm').addEventListener('click', function () {
-          self.confirm()
+        self.confirm()
       })
     },
     // 创造年月日scroller
@@ -310,12 +311,12 @@
     // 获取当月天数
     getTotalDays: function (year, month) {
       var totalDays = 30
-      if (month === 1 || month === 3 || month === 5 || month === 7 || month === 8 || month === 10 || month === 12) {
+      if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
         totalDays = 31
-      } else if (month === 4 || month === 6 || month === 9 || month === 11) {
+      } else if (month == 4 || month == 6 || month == 9 || month == 11) {
         totalDays = 30
-      } else if (month === 2) {
-        if ((year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0)) {
+      } else if (month == 2) {
+        if ((year % 4 == 0) && (year % 100 != 0 || year % 400 == 0)) {
           totalDays = 29
         } else {
           totalDays = 28
@@ -343,7 +344,11 @@
     // 获取选中的月
     getMonth: function () {
       if (this.monthScroller) {
+        var len = document.querySelector('.DatePicker__body__list__month').childNodes[0].childNodes.length
         var monthIndex = parseInt(Math.abs(this.monthScroller.y) / 34)
+        if (monthIndex > len) {
+          monthIndex = len - 1
+        }
         var month = document.querySelector('.DatePicker__body__list__month').childNodes[0].childNodes[monthIndex].innerText
         return month
       } else {
@@ -356,7 +361,11 @@
     // 获取选中的日
     getDate: function () {
       if (this.dateScroller) {
+        var len = document.querySelector('.DatePicker__body__list__date').childNodes[0].childNodes.length
         var dateIndex = parseInt(Math.abs(this.dateScroller.y) / 34)
+        if (dateIndex > len) {
+          dateIndex = len - 1
+        }
         var date = document.querySelector('.DatePicker__body__list__date').childNodes[0].childNodes[dateIndex].innerText
         return date
       } else {
@@ -382,8 +391,9 @@
       document.querySelector('.DatePicker__mask').style.opacity = '0'
       document.querySelector('.DatePicker__container').style.transform = 'translateY(100%)'
       setTimeout(function () {
-        // document.querySelector('#DatePicker').style.display = 'none'
-        document.body.removeChild(document.getElementById('DatePicker'))
+        for (var i = 0; i < document.querySelectorAll('.DatePicker').length; i++) {
+          document.querySelectorAll('.DatePicker')[i].remove()
+        }
       }, 300)
     },
     // 阻止多次点击
