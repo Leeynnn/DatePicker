@@ -13,7 +13,7 @@
     this.dateOptions = {
       substitute: '', // input的替身点击元素
       beginYear: date.getFullYear(), // 开始的年份
-      beginYmd: '', // 开始的年月日
+      beginYmd: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), // 开始的年月日
       endYear: date.getFullYear() + 10, // 结束的年份
       endYmd: '', // 结束的年月日
       ymd: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(), // 默认选中的日期
@@ -69,7 +69,7 @@
       var self = this
       var DatePicker = document.createElement('div')
       DatePicker.id = 'DatePicker'
-      DatePicker.class = 'DatePicker'
+      DatePicker.className = 'DatePicker'
       // 模块的HTML代码
       var str =
         '<div class="DatePicker__mask"></div>' +
